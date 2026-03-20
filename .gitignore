@@ -28,5 +28,30 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
+.idea/
 # .vscode/
+
+
+
+# 忽略根目录下的 IDE 配置
+.idea/
+.vscode/
+
+# 忽略子目录中的 IDE 配置 (递归匹配)
+**/ .idea/
+**/ .vscode/
+
+# 针对你 tree 输出中具体的路径
+backend/.idea/
+frontend/.idea/
+
+# 建议同时忽略 Go 和 Frontend 的常见生成文件
+# Backend (Go)
+backend/bin/
+backend/*.exe
+backend/vendor/
+
+# Frontend (Node/Web)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
