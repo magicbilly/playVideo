@@ -31,27 +31,3 @@ go.work.sum
 .idea/
 # .vscode/
 
-
-
-# 忽略根目录下的 IDE 配置
-.idea/
-.vscode/
-
-# 忽略子目录中的 IDE 配置 (递归匹配)
-**/.idea/
-**/.vscode/
-
-
-backend/.idea/
-frontend/.idea/
-
-
-# Backend (Go)
-backend/bin/
-backend/*.exe
-backend/vendor/
-
-# Frontend (Node/Web)
-frontend/node_modules/
-frontend/dist/
-frontend/.env
