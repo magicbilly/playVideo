@@ -1,0 +1,43 @@
+:root { --bg-color: #0f0f0f; --panel-bg: #1a1a1a; --primary-color: #ff0000; }
+body { background: var(--bg-color); color: #fff; font-family: 'PingFang SC', sans-serif; margin: 0; padding: 0; }
+
+/* 顶部导航栏占位 */
+.header { height: 56px; background: #0f0f0f; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
+.back-link { color: #aaa; text-decoration: none; font-size: 14px; border: 1px solid #444; padding: 5px 15px; border-radius: 20px; }
+.back-link:hover { background: #333; color: #fff; }
+
+/* 页面核心布局容器 */
+.container { display: flex; max-width: 1400px; margin: 20px auto; padding: 0 20px; gap: 20px; }
+
+/* 左侧主内容区 (70% - 75%) */
+.primary-content { flex: 3; min-width: 0; }
+
+/* 播放器容器 */
+#player-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* 视频下方的文字介绍区 */
+.video-meta { margin-top: 15px; text-align: left; }
+.video-meta h1 { font-size: 20px; margin: 8px 0; font-weight: 500; }
+.video-desc { color: #aaa; font-size: 14px; background: var(--panel-bg); padding: 12px; border-radius: 8px; margin-top: 12px; line-height: 1.6; }
+
+/* 评论区占位 */
+.comment-section { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; text-align: left; }
+
+/* 右侧侧边栏 (25% - 30%) */
+.secondary-sidebar { flex: 1; min-width: 350px; }
+.sidebar-panel { background: #1a1a1a; border-radius: 12px; padding: 15px; min-height: 400px; text-align: left; }
+.sidebar-panel h3 { margin-top: 0; font-size: 16px; color: #eee; }
+.placeholder-item { display: flex; gap: 10px; margin-bottom: 15px; color: #888; border-bottom: 1px solid #222; padding-bottom: 10px; }
+.placeholder-thumb { width: 120px; height: 68px; background: #333; border-radius: 6px; flex-shrink: 0; }
+
+/* 手机端适配：改为上下排列 */
+@media (max-width: 1000px) {
+    .container { flex-direction: column; }
+    .secondary-sidebar { min-width: 100%; }
+}

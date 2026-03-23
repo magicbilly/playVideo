@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>正在播放</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js"></script>
+    <link rel="stylesheet" href="player.css">
+</head>
+<body>
+
+<div class="header">
+    <a href="index.html" class="back-link">← 返回列表</a>
+</div>
+
+<div class="container">
+    <div class="primary-content">
+        <div id="player-container"></div>
+
+        <div class="video-meta">
+            <h1 id="video-title">正在加载...</h1>
+            <div style="font-size: 13px; color: #888;">播放量：1.2k • 2026-03-20</div>
+
+            <div class="video-desc">
+                <strong>视频简介：</strong><br>
+                这里是视频的详细描述区域。目前已开启 HLS 预加载模式。
+                <br><br>
+                <span style="color: #555;">[此处可以放置标签、合集信息等]</span>
+            </div>
+        </div>
+
+        <div class="comment-section">
+            <h3>评论 (0)</h3>
+            <div style="background: #222; height: 100px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555;">
+                快来发送第一条评论吧 (功能开发中...)
+            </div>
+        </div>
+    </div>
+
+    <div class="secondary-sidebar">
+        <div class="sidebar-panel">
+            <h3>接下来播放</h3>
+
+            <div class="placeholder-item">
+                <div class="placeholder-thumb"></div>
+                <div style="font-size: 14px;">推荐视频占位符 #1<br><small>待后端数据注入</small></div>
+            </div>
+            <div class="placeholder-item">
+                <div class="placeholder-thumb"></div>
+                <div style="font-size: 14px;">推荐视频占位符 #2<br><small>待后端数据注入</small></div>
+            </div>
+            <div class="placeholder-item">
+                <div class="placeholder-thumb"></div>
+                <div style="font-size: 14px;">推荐视频占位符 #3<br><small>待后端数据注入</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileHash = sessionStorage.getItem('play_file');
+    const cleanTitle = sessionStorage.getItem('play_title') || "未知视频";
+    document.getElementById('video-title').innerText = cleanTitle;
+
+    const PC_IP = window.location.hostname;
+    const videoUrl = `http://${PC_IP}:8080/play/m3u8/${fileHash}/index.m3u8`;
+
+    // 缓存 Key
+    const saveKey = `v_pos_${fileHash}`;
+
+    const dp = new DPlayer({
+        container: document.getElementById('player-container'),
+        autoplay: true,
+        video: {
+            url: videoUrl,
+            type: 'customHls',
+            customType: {
+                customHls: function (video, player) {
+                    const hls = new Hls({
+                        maxBufferLength: 60,
+                        maxMaxBufferLength: 120,
+                    });
+                    hls.loadSource(video.src);
+                    hls.attachMedia(video);
+                },
+            },
+        },
+    });
+
+    // 记录进度
+    const lastPos = localStorage.getItem(saveKey);
+    if(lastPos) dp.seek(lastPos);
+    dp.on('timeupdate', () => localStorage.setItem(saveKey, dp.video.currentTime));
+
+    dp.on('error', () => {
+        console.error("加载失败，请检查后端 HLS 目录是否正确。");
+    });
+</script>
+</body>
+</html>
