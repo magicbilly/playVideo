@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 
 type ff interface {
 	init(BaseDir, PosterDir, title, filehash string)
-	mkdirVideo() error
+	mkdirVideo(db *sql.DB, id int) error
 	generatePoster() error
 }
 
@@ -32,26 +33,28 @@ func (vp *VideoProcessor) init(BaseDir, PosterDir, title, filehash string) {
 
 // videoPath是纯达到配置文件中指定的路径
 // title是指定文件名称，没有任何后缀
-func (vp *VideoProcessor) mkdirVideo() error {
+func (vp *VideoProcessor) mkdirVideo(db *sql.DB, id int) error {
+	row := `update video set status=1 where id=?`
+	_, err := db.Exec(row, id)
 	videoM3u8 := filepath.Join(vp.BaseDir, "m3u8")
 	videoM3u8 = filepath.Join(videoM3u8, vp.Filehash)
 	f := vp.Title + ".mkv"
 	videoTitle := filepath.Join(vp.BaseDir, f)
-	err := os.MkdirAll(videoM3u8, 0755)
+	err = os.MkdirAll(videoM3u8, 0755)
 	if err != nil {
 		log.Error().Msg("创建文件失败")
 		return err
 	}
 	cmd := exec.Command("ffmpeg", "-i", videoTitle, "-c:v", "libx264", "-c:a", "aac", "-f", "hls", "-hls_time", "6", "-hls_list_size", "0", filepath.Join(videoM3u8, "index.m3u8"))
-	//	cmd.Stdout = os.Stdout
-	//	cmd.Stderr = os.Stderr
-
 	err = cmd.Run()
 	if err != nil {
 		//		fmt.Println(cmd.Stdout)
 		//		fmt.Println(cmd.Stderr)
-		return err
+		row = `update video set status=3 where id=?`
+		_, err = db.Exec(row, id)
 	}
+	row = `update video set status=2 where id=?`
+	_, err = db.Exec(row, id)
 	log.Info().Msg(vp.Title + "切片完成")
 	return nil
 }
@@ -61,9 +64,7 @@ func (vp *VideoProcessor) generatePoster() error {
 	// 封面文件命名建议使用 hash.jpg，避免原始文件名中的特殊字符
 	posterName := fmt.Sprintf("%s.png", vp.Filehash)
 	outputPath := filepath.Join(vp.PosterDir, posterName)
-
 	log.Info().Str("input", inputPath).Msg("生成视频封面")
-
 	// -ss 放在 -i 前面会快很多（快速定位）
 	cmd := exec.Command("ffmpeg",
 		"-ss", "00:00:05",

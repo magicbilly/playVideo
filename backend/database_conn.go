@@ -61,25 +61,16 @@ func getStorageName(originalName string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(cleanName))
 
-	// 3. 计算哈希并转为 16 进制字符串
 	fullHash := fmt.Sprintf("%x", hasher.Sum(nil))
-
-	// 4. 返回前 16 位即可（足够唯一，且路径更短）
-	// 如果想要完整的 32 位，直接 return fullHash
 	return fullHash
 }
 
-func insertData(db *sql.DB, title, path, poster, filehash string) error {
-	insql := `insert into video(Title,Path,Poster,FileHash) values(?,?,?,?)`
+func insertData(db *sql.DB, title, path, poster, filehash string, status int) error {
+	insql := `insert into video(Title,Path,Poster,FileHash,status) values(?,?,?,?)`
 	_, err := db.Exec(insql, title, path, poster, filehash)
 	return err
 }
 
-func execQuerySql(db *sql.DB, rows, name string) (string, error) {
-	var videoName string
-	err := db.QueryRow(rows, name).Scan(&videoName)
-	return videoName, err
-}
 func GetVideo(db *sql.DB) (videos []Video, err error) {
 	row := `select Title,Path,Poster,FileHash from video`
 	rows, err := db.Query(row)

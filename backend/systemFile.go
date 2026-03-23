@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,79 +39,70 @@ func insertInitData(c *Config, db *sql.DB) {
 		return
 	}
 	for _, name := range dir {
-		go func(name os.DirEntry) {
-			limitchan <- processsNum{}
-			i(db, name, c)
-			defer func() { <-limitchan }()
-
-		}(name)
-	}
-}
-
-func i(db *sql.DB, name os.DirEntry, c *Config) {
-	title := name.Name()
-	filehash := getStorageName(title)
-	ext := filepath.Ext(title)
-	if ext == ".mkv" && checkData(db, filehash) == false {
 		log.Info().Msg("开始插入数据并解析")
+		title := name.Name()
+		filehash := getStorageName(title)
+		ext := filepath.Ext(title)
 		name1 := title                         //视频路径
 		title = strings.TrimSuffix(title, ext) //视频名称
 		posterPath := title + ".png"           //封面路径
-		var vp ff
-		vp.init(c.Server.Path, posterPath, title, filehash)
-		err := vp.mkdirVideo()
-		if err != nil {
-			return
-		}
-		if !checkPosterFile(posterPath, filepath.Join(c.Server.Path, "poster")) {
-			err := vp.generatePoster() //制作封面
-			if err != nil {
-				log.Fatal().Err(err).Msg("封面制作失败")
-			}
-		}
-		err = insertData(db, title, name1, posterPath, filehash)
-		log.Info().Msg(title + "解析完成")
-		if err != nil {
-			return
+		if ext == ".mkv" && checkData(db, filehash) == false {
+			err = insertData(db, title, name1, posterPath, filehash, 0)
+		} else {
+			continue
 		}
 	}
+	noSplitVideo := checkStatus(db)
+	for _, i := range noSplitVideo {
+		go func(id int) {
+			limitchan <- processsNum{}
+			i2(db, c, id)
+			defer func() { <-limitchan }()
+		}(i)
+	}
 }
+func checkStatus(db *sql.DB) []int {
+	row := `select id from video where status=0`
+	rows, err := db.Query(row)
+	if err != nil {
 
-//以下函数已经移动到了ffmpegVideo.go中ff接口作为方法使用
-// func generatePoster(videoPath string, posterPath string) error { //封面制作
-//
-//		// 执行指令：ffmpeg -i 视频路径 -ss 1 -frames:v 1 封面路径
-//
-//		cmd := exec.Command("ffmpeg", "-i", videoPath, "-ss", "00:00:10", "-frames:v", "1", "-y", posterPath)
-//
-//		// -y 表示如果封面已存在则自动覆盖
-//		err := cmd.Run()
-//		if err != nil {
-//			log.Err(err).Msg("change poster fail")
-//		}
-//		return err
-//	}
-// videoPath是纯达到配置文件中指定的路径
-// title是指定文件名称，没有任何后缀
-//func mkdirVideo(videoPath, Filehash, Title string) error {
-//	videoM3u8 := filepath.Join(videoPath, "m3u8")
-//	videoM3u8 = filepath.Join(videoM3u8, Filehash)
-//	Title = Title + ".mkv"
-//	videoTitle := filepath.Join(videoPath, Title)
-//	err := os.MkdirAll(videoM3u8, 0755)
-//	if err != nil {
-//		log.Error().Msg("创建文件失败")
-//		return err
-//	}
-//	cmd := exec.Command("ffmpeg", "-i", videoTitle, "-c:v", "libx264", "-c:a", "aac", "-f", "hls", "-hls_time", "6", "-hls_list_size", "0", filepath.Join(videoM3u8, "index.m3u8"))
-//	//	cmd.Stdout = os.Stdout
-//	//	cmd.Stderr = os.Stderr
-//
-//	err = cmd.Run()
-//	if err != nil {
-//		//		fmt.Println(cmd.Stdout)
-//		//		fmt.Println(cmd.Stderr)
-//		return err
-//	}
-//	return nil
-//}
+	}
+	defer rows.Close()
+	var a []int
+	for rows.Next() {
+		var w int
+		err := rows.Scan(&w)
+		if err != nil {
+
+		}
+		a = append(a, w)
+	}
+	return a
+}
+func getvideo(db *sql.DB, a int) Video {
+	row := `select FileHash,Title,Path,Poster from video where id=?`
+	var video Video
+	db.QueryRow(row, a).Scan(&video.Filehash, &video.Title, &video.Path, &video.Poster)
+	log.Info().Msg("获取未处理视频成功")
+	return video
+}
+func i2(db *sql.DB, c *Config, id int) {
+	video := getvideo(db, id)
+	fmt.Println(video)
+	var vp VideoProcessor
+	vp.init(c.Server.Path, video.Poster, video.Title, video.Filehash)
+	fmt.Println(vp)
+	log.Info().Msg("开始处理")
+	err := vp.mkdirVideo(db, id)
+	if err != nil {
+		log.Error().Err(err).Msg("mkdirVideo 失败")
+		return
+	}
+	if !checkPosterFile(video.Poster, filepath.Join(c.Server.Path, "poster")) {
+		err := vp.generatePoster() //制作封面
+		if err != nil {
+			log.Err(err).Msg("封面制作失败")
+		}
+	}
+	log.Info().Msg(video.Title + "解析完成")
+}
