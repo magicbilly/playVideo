@@ -1,6 +1,5 @@
 const PC_IP = window.location.hostname;
 const backendHost = `http://${PC_IP}:8080`;
-
 function renderVideos(videos) {
     const listElement = document.getElementById('video-list');
     listElement.innerHTML = '';

@@ -28,6 +28,9 @@ type Config struct {
 		ParseTime            bool   `yaml:"ParseTime"`
 		AllowNativePasswords bool   `yaml:"AllowNativePasswords"`
 	} `yaml:"Database"`
+	System struct {
+		Coroutine int `yaml:"Coroutine"`
+	}
 }
 type Video struct {
 	Title    string `json:"title"`
@@ -72,7 +75,6 @@ func main() {
 	http.Handle("/play/", http.StripPrefix("/play/", http.FileServer(http.Dir(videoDir))))
 	posterDir := filepath.Join(videoDir, "poster")
 	http.Handle("/api/poster/", http.StripPrefix("/api/poster/", http.FileServer(http.Dir(posterDir))))
-
 	addr := ":" + fmt.Sprintf("%d", c.Server.Port)
 	//
 	log.Info().Msg("the port binding")

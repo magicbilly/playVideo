@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -24,14 +24,29 @@ func checkPosterFile(posterName, posterPath string) bool {
 	return false
 }
 
+func getPosterPath(ppath, path string) string {
+	if path == "default" {
+		return filepath.Join(path, "poster")
+	} else {
+		return ppath
+	}
+}
+
+// 这个是一个任务池类型，下面是可以限制FFmpeg协程的数量，可以在下面的make中修改协程数量
 type processsNum struct {
 }
 
 func insertInitData(c *Config, db *sql.DB) {
 	dir, err := os.ReadDir(c.Server.Path)
-	a := filepath.Join(c.Server.Path, "poster") //这个是poster路径
+	a := getPosterPath(c.Server.Poster, c.Server.Path) //这个是poster路径
 	aerr := os.MkdirAll(a, 0755)
-	limitchan := make(chan processsNum, 3)
+	var court int
+	if c.System.Coroutine == 0 {
+		court = runtime.NumCPU() / 2
+	} else {
+		court = c.System.Coroutine
+	}
+	limitChan := make(chan processsNum, court) //限制协程数量
 	if aerr != nil {
 		log.Fatal().Err(aerr).Msg("")
 	}
@@ -41,13 +56,13 @@ func insertInitData(c *Config, db *sql.DB) {
 	for _, name := range dir {
 		log.Info().Msg("开始插入数据并解析")
 		title := name.Name()
-		filehash := getStorageName(title)
+		fileHash := getStorageName(title)
 		ext := filepath.Ext(title)
 		name1 := title                         //视频路径
 		title = strings.TrimSuffix(title, ext) //视频名称
 		posterPath := title + ".png"           //封面路径
-		if ext == ".mkv" && checkData(db, filehash) == false {
-			err = insertData(db, title, name1, posterPath, filehash, 0)
+		if ext == ".mkv" && checkData(db, fileHash) == false {
+			err = insertData(db, title, name1, posterPath, fileHash, 0)
 		} else {
 			continue
 		}
@@ -55,9 +70,9 @@ func insertInitData(c *Config, db *sql.DB) {
 	noSplitVideo := checkStatus(db)
 	for _, i := range noSplitVideo {
 		go func(id int) {
-			limitchan <- processsNum{}
+			limitChan <- processsNum{}
 			i2(db, c, id)
-			defer func() { <-limitchan }()
+			defer func() { <-limitChan }()
 		}(i)
 	}
 }
@@ -88,10 +103,8 @@ func getvideo(db *sql.DB, a int) Video {
 }
 func i2(db *sql.DB, c *Config, id int) {
 	video := getvideo(db, id)
-	fmt.Println(video)
 	var vp VideoProcessor
 	vp.init(c.Server.Path, video.Poster, video.Title, video.Filehash)
-	fmt.Println(vp)
 	log.Info().Msg("开始处理")
 	err := vp.mkdirVideo(db, id)
 	if err != nil {

@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/md5"
 	"database/sql"
-	"fmt"
 	"strings"
 	"time"
 
@@ -61,7 +60,7 @@ func getStorageName(originalName string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(cleanName))
 
-	fullHash := fmt.Sprintf("%x", hasher.Sum(nil))
+	fullHash := string(hasher.Sum(nil))
 	return fullHash
 }
 

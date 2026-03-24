@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,8 +47,6 @@ func (vp *VideoProcessor) mkdirVideo(db *sql.DB, id int) error {
 	cmd := exec.Command("ffmpeg", "-i", videoTitle, "-c:v", "libx264", "-c:a", "aac", "-f", "hls", "-hls_time", "6", "-hls_list_size", "0", filepath.Join(videoM3u8, "index.m3u8"))
 	err = cmd.Run()
 	if err != nil {
-		//		fmt.Println(cmd.Stdout)
-		//		fmt.Println(cmd.Stderr)
 		row = `update video set status=3 where id=?`
 		_, err = db.Exec(row, id)
 	}
@@ -62,7 +59,7 @@ func (vp *VideoProcessor) generatePoster() error {
 	inputPath := filepath.Join(vp.BaseDir, vp.Title) + ".mkv"
 
 	// 封面文件命名建议使用 hash.jpg，避免原始文件名中的特殊字符
-	posterName := fmt.Sprintf("%s.png", vp.Filehash)
+	posterName := vp.Filehash + ".png"
 	outputPath := filepath.Join(vp.PosterDir, posterName)
 	log.Info().Str("input", inputPath).Msg("生成视频封面")
 	// -ss 放在 -i 前面会快很多（快速定位）
@@ -73,7 +70,6 @@ func (vp *VideoProcessor) generatePoster() error {
 		"-q:v", "2", // 图片质量 (2-5 较好)
 		"-y", outputPath,
 	)
-
 	if err := cmd.Run(); err != nil {
 		log.Error().Err(err).Msg("生成封面失败")
 		return err
