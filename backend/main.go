@@ -15,9 +15,11 @@ import (
 
 type Config struct {
 	Server struct {
-		Port   int    `yaml:"Port"`
-		Path   string `yaml:"Video_path"`
-		Poster string `yaml:"Poster_path"`
+		Port           int    `yaml:"Port"`
+		Path           string `yaml:"Video_path"`
+		Poster         string `yaml:"Poster_path"`
+		enableVideo2Ts bool   `yaml:"enableVideo2Ts"`
+		TsVideoPath    string `yaml:"TsVideoPath"`
 	} `yaml:"Server"`
 	Database struct {
 		User                 string `yaml:"User"`
@@ -64,7 +66,11 @@ func main() {
 			log.Error().Msg("Mysql close fail")
 		}
 	}(db)
-	insertInitData(c, db)
+	if c.Server.enableVideo2Ts {
+		insertInitData2ts(c, db)
+	} else {
+		insertInitData(c, db)
+	}
 	http.HandleFunc("/api/play", Index(db))
 	log.Info().Msg("route '/api/play' register success")
 	http.HandleFunc("/api/search", Search(db))
@@ -72,8 +78,14 @@ func main() {
 	log.Info().Msg("route '/' register success")
 	// 映射你的本地视频目录到 /play/ 路径
 	videoDir := c.Server.Path
+	if c.Server.TsVideoPath != "default" {
+		videoDir = c.Server.TsVideoPath
+	}
 	http.Handle("/play/", http.StripPrefix("/play/", http.FileServer(http.Dir(videoDir))))
 	posterDir := filepath.Join(videoDir, "poster")
+	if c.Server.Poster != "default" {
+		posterDir = c.Server.TsVideoPath
+	}
 	http.Handle("/api/poster/", http.StripPrefix("/api/poster/", http.FileServer(http.Dir(posterDir))))
 	addr := ":" + fmt.Sprintf("%d", c.Server.Port)
 	//

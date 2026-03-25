@@ -11,7 +11,7 @@ import (
 
 type ff interface {
 	init(BaseDir, PosterDir, title, filehash string)
-	mkdirVideo(db *sql.DB, id int) error
+	mkdirVideo(db *sql.DB, id int, tspath string) error
 	generatePoster() error
 }
 
@@ -32,11 +32,17 @@ func (vp *VideoProcessor) init(BaseDir, PosterDir, title, filehash string) {
 
 // videoPath是纯达到配置文件中指定的路径
 // title是指定文件名称，没有任何后缀
-func (vp *VideoProcessor) mkdirVideo(db *sql.DB, id int) error {
+func (vp *VideoProcessor) mkdirVideo(db *sql.DB, id int, tspath string) error {
 	row := `update video set status=1 where id=?`
 	_, err := db.Exec(row, id)
-	videoM3u8 := filepath.Join(vp.BaseDir, "m3u8")
-	videoM3u8 = filepath.Join(videoM3u8, vp.Filehash)
+	var videoM3u8 string
+	if tspath == "default" {
+		videoM3u8 = filepath.Join(vp.BaseDir, "m3u8")
+		videoM3u8 = filepath.Join(videoM3u8, vp.Filehash)
+	} else {
+		//直接插在下面的输出
+		videoM3u8 = filepath.Join(tspath, vp.Filehash)
+	}
 	f := vp.Title + ".mkv"
 	videoTitle := filepath.Join(vp.BaseDir, f)
 	err = os.MkdirAll(videoM3u8, 0755)

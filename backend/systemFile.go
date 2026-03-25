@@ -25,7 +25,7 @@ func checkPosterFile(posterName, posterPath string) bool {
 }
 
 func getPosterPath(ppath, path string) string {
-	if path == "default" {
+	if ppath == "default" {
 		return filepath.Join(path, "poster")
 	} else {
 		return ppath
@@ -37,6 +37,29 @@ type processsNum struct {
 }
 
 func insertInitData(c *Config, db *sql.DB) {
+	dir, err := os.ReadDir(c.Server.Path)
+	a := getPosterPath(c.Server.Poster, c.Server.Path) //这个是poster路径
+	aerr := os.MkdirAll(a, 0755)
+	if aerr != nil {
+		log.Fatal().Err(aerr).Msg("")
+	}
+	if err != nil {
+		return
+	}
+	for _, name := range dir {
+		log.Info().Msg("开始插入数据并解析")
+		title := name.Name()
+		fileHash := getStorageName(title)
+		ext := filepath.Ext(title)
+		name1 := title                         //视频路径
+		title = strings.TrimSuffix(title, ext) //视频名称
+		posterPath := title + ".png"           //封面路径
+		if ext == ".mkv" && checkData(db, fileHash) == false {
+			err = insertData(db, title, name1, posterPath, fileHash, 2)
+		}
+	}
+}
+func insertInitData2ts(c *Config, db *sql.DB) {
 	dir, err := os.ReadDir(c.Server.Path)
 	a := getPosterPath(c.Server.Poster, c.Server.Path) //这个是poster路径
 	aerr := os.MkdirAll(a, 0755)
@@ -106,7 +129,7 @@ func i2(db *sql.DB, c *Config, id int) {
 	var vp VideoProcessor
 	vp.init(c.Server.Path, video.Poster, video.Title, video.Filehash)
 	log.Info().Msg("开始处理")
-	err := vp.mkdirVideo(db, id)
+	err := vp.mkdirVideo(db, id, c.Server.TsVideoPath)
 	if err != nil {
 		log.Error().Err(err).Msg("mkdirVideo 失败")
 		return
