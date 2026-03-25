@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"strings"
 	"time"
 
@@ -60,13 +61,12 @@ func getStorageName(originalName string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(cleanName))
 
-	fullHash := string(hasher.Sum(nil))
-	return fullHash
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func insertData(db *sql.DB, title, path, poster, filehash string, status int) error {
-	insql := `insert into video(Title,Path,Poster,FileHash,status) values(?,?,?,?)`
-	_, err := db.Exec(insql, title, path, poster, filehash)
+	insql := `insert into video(Title,Path,Poster,FileHash,status) values(?,?,?,?,?)`
+	_, err := db.Exec(insql, title, path, poster, filehash, status)
 	return err
 }
 

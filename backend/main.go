@@ -18,7 +18,7 @@ type Config struct {
 		Port           int    `yaml:"Port"`
 		Path           string `yaml:"Video_path"`
 		Poster         string `yaml:"Poster_path"`
-		enableVideo2Ts bool   `yaml:"enableVideo2Ts"`
+		EnableVideo2Ts bool   `yaml:"enableVideo2Ts"`
 		TsVideoPath    string `yaml:"TsVideoPath"`
 	} `yaml:"Server"`
 	Database struct {
@@ -66,7 +66,7 @@ func main() {
 			log.Error().Msg("Mysql close fail")
 		}
 	}(db)
-	if c.Server.enableVideo2Ts {
+	if c.Server.EnableVideo2Ts {
 		insertInitData2ts(c, db)
 	} else {
 		insertInitData(c, db)

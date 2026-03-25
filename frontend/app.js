@@ -10,13 +10,8 @@ function renderVideos(videos) {
     }
 
     videos.forEach((video) => {
-        // 1. 标题处理：如果后端没处理后缀，前端这里去掉
-        const cleanTitle = video.title.replace(/\.[^/.]+$/, "");
-
-        // 2. 💡 重要修改：使用 file_hash 而不是文件名
         // 如果后端返回的字段名是 file_hash，请确保一致
         const fileID = video.filehash || video.id;
-        console.log(video);
         // 3. 海报逻辑
         const posterBaseApi = `${backendHost}/api/poster/`;
         const defaultPoster = '/images/default-cover.png';
@@ -73,6 +68,7 @@ function renderVideos(videos) {
             // 存储 Hash 值，player.html 将通过这个 Hash 去找 m3u8 文件夹
             sessionStorage.setItem('play_file', fileID);
             sessionStorage.setItem('play_title', cleanTitle);
+
             window.location.href = 'player.html';
         };
 

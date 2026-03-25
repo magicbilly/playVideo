@@ -62,7 +62,7 @@ func (vp *VideoProcessor) mkdirVideo(db *sql.DB, id int, tspath string) error {
 	return nil
 }
 func (vp *VideoProcessor) generatePoster() error {
-	inputPath := filepath.Join(vp.BaseDir, vp.Title) + ".mkv"
+	inputPath := filepath.Join(vp.BaseDir, vp.Title+".mkv")
 
 	// 封面文件命名建议使用 hash.jpg，避免原始文件名中的特殊字符
 	posterName := vp.Filehash + ".png"
@@ -77,8 +77,7 @@ func (vp *VideoProcessor) generatePoster() error {
 		"-y", outputPath,
 	)
 	if err := cmd.Run(); err != nil {
-		log.Error().Err(err).Msg("生成封面失败")
-		return err
+		log.Error().Err(err).Msg("生成封面失败," + err.Error())
 	}
 	log.Info().Msg(vp.Title + "封面生成完成")
 	return nil
