@@ -5,14 +5,32 @@
     <title>Play</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.css">
     <script src="https://cdn.jsdelivr.net/npm/dplayer/dist/DPlayer.min.js"></script>
+    <style>
+        .login-btn {
+            text-decoration: none;
+            color: #6366f1;
+            font-size: 14px;
+            border: 1px solid #6366f1;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        .login-btn:hover {
+            background: #6366f1;
+            color: white;
+        }
+    </style>
 </head>
 <body>
 <div class="search-bar">
     <input type="text" id="search-bar" placeholder="Search...">
     <button onclick="handSearch()">搜索</button>
 </div>
+
 <div class="container">
-    <h1>我的视频列表</h1>
+    <div class="container">
+        <h1>我的视频列表</h1>
+    </div>
     <div id="video-list">正在连接后端服务器...</div>
 </div>
 

@@ -22,3 +22,14 @@ CREATE TABLE if not exists `video` (
     -- 为 Hash 建立索引，极速查询
                          INDEX `idx_hash` (`FileHash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+drop table user
+use video_test;
+create table if not exists `user`(
+    `id` char(10) primary key,
+    `name` varchar(20) not null,
+    `role` varchar(10) default 'visitor',
+    `password` char(32) not null ,
+
+    `created_at`   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)

@@ -13,6 +13,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var manager UserManager
+
+func init() {
+	root := &User{}
+	root.UserInit("root", "root", "secret_pass")
+	manager = root
+}
+
 type Config struct {
 	Server struct {
 		Port           int    `yaml:"Port"`
@@ -43,9 +51,10 @@ type Video struct {
 
 func corsHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:8081")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -71,9 +80,12 @@ func main() {
 	} else {
 		insertInitData(c, db)
 	}
+	log.Info().Msg("Index page register success")
 	http.HandleFunc("/api/play", Index(db))
 	log.Info().Msg("route '/api/play' register success")
 	http.HandleFunc("/api/search", Search(db))
+	http.HandleFunc("/api/login", LoginHandler(db))
+	http.HandleFunc("/api/check-auth", CheckAuthHandler)
 	log.Info().Msg("route '/api/Search' register success")
 	log.Info().Msg("route '/' register success")
 	// 映射你的本地视频目录到 /play/ 路径
@@ -95,7 +107,15 @@ func main() {
 		log.Fatal().Err(err).Msg("the port bind fail")
 	}
 }
-
+func CheckAuthHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "video-auth")
+	if auth, ok := session.Values["is_login"].(bool); !ok || !auth {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	log.Info().Msgf("Raw Cookie: %s", r.Header.Get("Cookie"))
+	w.WriteHeader(http.StatusOK)
+}
 func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

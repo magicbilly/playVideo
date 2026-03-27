@@ -1,5 +1,46 @@
 const PC_IP = window.location.hostname;
 const backendHost = `http://${PC_IP}:8080`;
+
+// 检查本地存储是否有登录令牌（假设你登录后存了 token）
+// 替换掉你之前的 localStorage 检查
+// async function checkLogin() {
+//     try {
+//         const res = await fetch(`${backendHost}/api/check-auth`, {
+//             credentials: 'include'
+//         });
+//
+//         console.log("Check-Auth 状态码:", res.status); // 看看是不是真的 200
+//
+//         if (res.status === 200) {
+//             console.log("验证通过，不跳转");
+//             return true;
+//         } else {
+//             console.warn("验证失败，状态码:", res.status);
+//             window.location.href = 'login.html';
+//             return false;
+//         }
+//     } catch (err) {
+//         console.error("Fetch 异常:", err);
+//         // window.location.href = 'login.html'; // 调试阶段先注掉，防止无限刷
+//         return false;
+//     }
+// }
+// 统一入口
+window.onload = async () => {
+    // 1. 先阻塞式检查登录状态
+    // const isLogin = await checkLogin();
+    // if (!isLogin) return; // 如果没登录，后面的逻辑就不运行了
+
+    // 2. 登录成功后再加载视频
+    loadVideos();
+
+    const searchInput = document.getElementById('search-bar');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handSearch();
+        });
+    }
+};
 function renderVideos(videos) {
     const listElement = document.getElementById('video-list');
     listElement.innerHTML = '';
@@ -13,8 +54,10 @@ function renderVideos(videos) {
         // 如果后端返回的字段名是 file_hash，请确保一致
         const fileID = video.filehash || video.id;
         // 3. 海报逻辑
+        const cleanTitle = video.title || "未知视频";
         const posterBaseApi = `${backendHost}/api/poster/`;
-        const defaultPoster = '/images/default-cover.png';
+        const defaultPoster = `${backendHost}/api/poster/default-cover.png`;
+
         const posterUrl = (video.poster && video.poster.trim() !== "")
             ? `${posterBaseApi}${encodeURIComponent(video.poster)}`
             : defaultPoster;
@@ -98,20 +141,12 @@ async function handSearch() {
 // 初始加载
 async function loadVideos() {
     try {
-        const response = await fetch(`${backendHost}/api/play`);
+        const response = await fetch(`${backendHost}/api/play`, {
+            credentials: 'include'
+        });
         const videos = await response.json();
         renderVideos(videos);
     } catch (err) {
         document.getElementById('video-list').innerHTML = '<p style="color:red">连接后端失败，请检查服务是否启动</p>';
     }
 }
-
-window.onload = () => {
-    loadVideos();
-    const searchInput = document.getElementById('search-bar');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handSearch();
-        });
-    }
-};
